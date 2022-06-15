@@ -12,20 +12,19 @@ data Exp a = C Char
            | I a
            deriving (Eq, Show)
 
-foldExp :: (Char -> r) -> (Exp a -> Exp a -> r) -> ([Exp a] -> r) -> (a -> r) -> Exp a -> r
+foldExp :: (Char -> r) -> (r -> r -> r) -> ([r] -> r) -> (a -> r) -> Exp a -> r
 foldExp char cons option iFunc exp = case exp of
   C c         -> char c
-  Cons l r    -> cons l r
-  Option opts -> option opts
+  Cons l r    -> cons (foldExp char cons option iFunc l) (foldExp char cons option iFunc r)
+  Option opts -> option (map (foldExp char cons option iFunc) opts)
   I i         -> iFunc i
 
 repr :: (Show a) => Exp a -> String
-repr = go
+repr = foldExp char cons option iFunc
   where
-    go          = foldExp char cons option iFunc
     char c      = [c]
-    cons l r    = go l ++ go r
-    option opts = "(" ++ intercalate "|" (map go opts) ++ ")"
+    cons l r    = l ++ r
+    option opts = "(" ++ intercalate "|" opts ++ ")"
     iFunc s     = "<" ++ show s ++ ">"
 
 class Rhs a where
@@ -33,15 +32,13 @@ class Rhs a where
   rhs        :: a -> Exp a
 
 instance (Rhs a) => Arbitrary (Exp a) where
-  arbitrary = go (I headSymbol)
+  arbitrary = foldExp char cons option iFunc (I $ return headSymbol)
     where
-      go :: (Rhs a) => Exp a -> Gen (Exp a)
-      go          = foldExp char cons option iFunc
       char c      = return $ C c
       cons l r    = do
-        l' <- go l
-        r' <- go r
+        l' <- l
+        r' <- r
         return $ Cons l' r'
-      option opts = oneof $ map go opts
-      iFunc i     = (go . rhs) i
+      option opts = oneof opts
+      iFunc i     = rhs <$> i
   shrink _ = []

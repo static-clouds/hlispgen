@@ -27,27 +27,33 @@ type Parser = Parsec String ()
 -- abstract syntax tree type
 data AST = ANum Char | AAdd AST AST deriving Show
 
-data ToOutput where
-  Num :: Char -> ToOutput
-  Add :: ToOutput -> ToOutput -> ToOutput
+data ParseOutput where
+  Num :: Char -> ParseOutput
+  Add :: ParseOutput -> ParseOutput -> ParseOutput
 
-toParseTree :: ToOutput -> Exp Symbol
-toParseTree (Num c) = C c
-toParseTree (Add l r) = Cons (C '(') (Cons (toParseTree l) (Cons (C '+') (Cons (toParseTree r) (C ')'))) )
+foldParseOutput :: (Char -> r) -> (r -> r -> r) -> ParseOutput -> r
+foldParseOutput num add value = case value of
+  (Num c)   -> num c
+  (Add l r) -> add (foldParseOutput num add l) (foldParseOutput num add r)
 
-toAST :: ToOutput -> AST
-toAST (Num c) = ANum c
-toAST (Add l r) = AAdd (toAST l) (toAST r)
+toParseTree :: ParseOutput -> Exp Symbol
+toParseTree = foldParseOutput num add
+  where
+    num     = C
+    add l r = Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
+
+toAST :: ParseOutput -> AST
+toAST = foldParseOutput ANum AAdd
 
 -- parse rules
 
-expression :: Parser ToOutput
+expression :: Parser ParseOutput
 expression = numtoken <|> sumExpression
 
-numtoken :: Parser ToOutput
+numtoken :: Parser ParseOutput
 numtoken = Num <$> (char '1' <|> char '2' <|> char '3')
 
-sumExpression :: Parser ToOutput
+sumExpression :: Parser ParseOutput
 sumExpression = do
   string "("
   l <- expression
