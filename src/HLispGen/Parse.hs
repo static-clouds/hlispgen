@@ -1,21 +1,37 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module HLispGen.Parse where
 
-import HLispGen.Lib
+import HLispGen.Lib ( Symbol, Exp(C, Cons) )
 import Text.Parsec
 
 type Parser = Parsec String ()
 
-expression :: Parser (Exp Symbol)
+data AST = ANum Char | Add AST AST deriving Show
+
+class ToOutput a where
+  toNumToken :: Char -> a
+  toAdd :: a -> a -> a
+
+instance ToOutput (Exp Symbol) where
+  toNumToken = C
+  toAdd l r = Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
+
+instance ToOutput AST where
+  toNumToken = ANum
+  toAdd = Add
+
+expression :: (ToOutput a) => Parser a
 expression = numtoken <|> sumExpression
 
-numtoken :: Parser (Exp Symbol)
-numtoken = C <$> (char '1' <|> char '2' <|> char '3')
+numtoken :: (ToOutput a) => Parser a
+numtoken = toNumToken <$> (char '1' <|> char '2' <|> char '3')
 
-sumExpression :: Parser (Exp Symbol)
+sumExpression :: (ToOutput a) => Parser a
 sumExpression = do
   string "("
   l <- expression
   string "+"
   r <- expression
   string ")"
-  return $ Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
+  return $ toAdd l r

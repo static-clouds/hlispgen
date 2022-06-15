@@ -32,13 +32,13 @@ data Symbol = Token | NumToken | Plus | LParen | RParen deriving (Eq, Show)
 
 class Rhs a where
   headSymbol :: a
-  rhs :: a -> Exp a
+  rhs        :: a -> Exp a
 
 instance Rhs Symbol where
   headSymbol = Token
-  rhs Token = Option [ I NumToken
-                     , Cons (I LParen) (Cons (I Token) (Cons (I Plus) (Cons (I Token) (I RParen))) )
-                     ]
+  rhs Token    = Option [ I NumToken
+                        , Cons (I LParen) (Cons (I Token) (Cons (I Plus) (Cons (I Token) (I RParen))) )
+                        ]
   rhs NumToken = Option [C '1', C '2', C '3']
   rhs Plus     = C '+'
   rhs LParen   = C '('
