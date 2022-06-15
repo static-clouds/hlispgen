@@ -7,19 +7,19 @@ import Text.Parsec
 
 type Parser = Parsec String ()
 
-data AST = ANum Char | Add AST AST deriving Show
+data AST = ANum Char | AAdd AST AST deriving Show
 
 class ToOutput a where
   toNumToken :: Char -> a
-  toAdd :: a -> a -> a
+  toAdd      :: a -> a -> a
 
 instance ToOutput (Exp Symbol) where
   toNumToken = C
-  toAdd l r = Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
+  toAdd l r  = Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
 
 instance ToOutput AST where
   toNumToken = ANum
-  toAdd = Add
+  toAdd      = AAdd
 
 expression :: (ToOutput a) => Parser a
 expression = numtoken <|> sumExpression
