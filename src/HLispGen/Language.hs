@@ -1,5 +1,5 @@
--- {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 
 module HLispGen.Language where
 
@@ -27,31 +27,31 @@ type Parser = Parsec String ()
 -- abstract syntax tree type
 data AST = ANum Char | AAdd AST AST deriving Show
 
-class ToOutput a where
-  toNumToken :: Char -> a
-  toAdd      :: a -> a -> a
+data ToOutput where
+  Num :: Char -> ToOutput
+  Add :: ToOutput -> ToOutput -> ToOutput
 
-instance ToOutput (Exp Symbol) where
-  toNumToken = C
-  toAdd l r  = Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
+toParseTree :: ToOutput -> Exp Symbol
+toParseTree (Num c) = C c
+toParseTree (Add l r) = Cons (C '(') (Cons (toParseTree l) (Cons (C '+') (Cons (toParseTree r) (C ')'))) )
 
-instance ToOutput AST where
-  toNumToken = ANum
-  toAdd      = AAdd
+toAST :: ToOutput -> AST
+toAST (Num c) = ANum c
+toAST (Add l r) = AAdd (toAST l) (toAST r)
 
 -- parse rules
 
-expression :: (ToOutput a) => Parser a
+expression :: Parser ToOutput
 expression = numtoken <|> sumExpression
 
-numtoken :: (ToOutput a) => Parser a
-numtoken = toNumToken <$> (char '1' <|> char '2' <|> char '3')
+numtoken :: Parser ToOutput
+numtoken = Num <$> (char '1' <|> char '2' <|> char '3')
 
-sumExpression :: (ToOutput a) => Parser a
+sumExpression :: Parser ToOutput
 sumExpression = do
   string "("
   l <- expression
   string "+"
   r <- expression
   string ")"
-  return $ toAdd l r
+  return $ Add l r
