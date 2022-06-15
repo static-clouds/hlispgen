@@ -5,8 +5,9 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.QuickCheck (property)
 import Text.Parsec (parse)
 
-import HLispGen.Lib
-import HLispGen.Parse (expression)
+import HLispGen.Grammar (repr, Exp)
+import HLispGen.Language (expression, Symbol)
+
 
 prop_parse_randomly_generated_trees :: Exp Symbol -> Bool
 prop_parse_randomly_generated_trees exp = case parse expression "" (repr exp) of

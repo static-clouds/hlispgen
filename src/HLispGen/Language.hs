@@ -1,12 +1,30 @@
+-- {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module HLispGen.Parse where
+module HLispGen.Language where
 
-import HLispGen.Lib ( Symbol, Exp(C, Cons) )
-import Text.Parsec
+import Text.Parsec ( char, string, (<|>), Parsec )
+import HLispGen.Grammar ( Rhs(headSymbol, rhs), Exp(C, Cons, Option, I) )
+
+-- a concrete specification of a simple language and its parser
+
+data Symbol = Token | NumToken | Plus | LParen | RParen deriving (Eq, Show)
+
+instance Rhs Symbol where
+  headSymbol = Token
+  rhs Token    = Option [ I NumToken
+                        , Cons (I LParen) (Cons (I Token) (Cons (I Plus) (Cons (I Token) (I RParen))) )
+                        ]
+  rhs NumToken = Option [C '1', C '2', C '3']
+  rhs Plus     = C '+'
+  rhs LParen   = C '('
+  rhs RParen   = C ')'
+
+-- parser
 
 type Parser = Parsec String ()
 
+-- abstract syntax tree type
 data AST = ANum Char | AAdd AST AST deriving Show
 
 class ToOutput a where
@@ -20,6 +38,8 @@ instance ToOutput (Exp Symbol) where
 instance ToOutput AST where
   toNumToken = ANum
   toAdd      = AAdd
+
+-- parse rules
 
 expression :: (ToOutput a) => Parser a
 expression = numtoken <|> sumExpression

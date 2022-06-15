@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-module HLispGen.Lib where
+module HLispGen.Grammar where
+
+-- tools for defining a language specification and automatically generating test data
 
 import Data.List(intercalate)
 import Test.QuickCheck ( oneof, Arbitrary(..), Gen )
 
--- TODO: Have different types for parse rules and parse trees
 data Exp a = C Char
            | Cons (Exp a) (Exp a)
            | Option [Exp a]
@@ -28,22 +28,9 @@ repr = go
     option opts = "(" ++ intercalate "|" (map go opts) ++ ")"
     iFunc s     = "<" ++ show s ++ ">"
 
-data Symbol = Token | NumToken | Plus | LParen | RParen deriving (Eq, Show)
-
 class Rhs a where
   headSymbol :: a
   rhs        :: a -> Exp a
-
-instance Rhs Symbol where
-  headSymbol = Token
-  rhs Token    = Option [ I NumToken
-                        , Cons (I LParen) (Cons (I Token) (Cons (I Plus) (Cons (I Token) (I RParen))) )
-                        ]
-  rhs NumToken = Option [C '1', C '2', C '3']
-  rhs Plus     = C '+'
-  rhs LParen   = C '('
-  rhs RParen   = C ')'
-
 
 instance (Rhs a) => Arbitrary (Exp a) where
   arbitrary = go (I headSymbol)

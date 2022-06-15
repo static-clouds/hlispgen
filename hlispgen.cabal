@@ -43,8 +43,8 @@ library hlispgen-lib
         parsec ^>=3.1.15.1,
         QuickCheck
     exposed-modules:
-        HLispGen.Lib,
-        HLispGen.Parse
+        HLispGen.Grammar,
+        HLispGen.Language
     default-language: Haskell2010
 
 executable hlispgen
