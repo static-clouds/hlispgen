@@ -12,7 +12,7 @@ import HLispGen.Language (expression, Symbol, toParseTree)
 prop_parse_randomly_generated_trees :: Exp Symbol -> Bool
 prop_parse_randomly_generated_trees exp = case parse expression "" (repr exp) of
   Left err -> False
-  Right res -> exp == toParseTree res
+  Right res -> trace (show exp) $ trace (show $ toParseTree res) $ exp == toParseTree res
 
 
 spec :: Spec

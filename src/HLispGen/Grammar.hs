@@ -19,6 +19,14 @@ foldExp char cons option iFunc exp = case exp of
   Option opts -> option (map (foldExp char cons option iFunc) opts)
   I i         -> iFunc i
 
+
+foldExp' :: (Rhs a) => (Char -> r) -> (r -> r -> r) -> ([r] -> r) -> Exp a -> r
+foldExp' char cons option exp = case exp of
+  C c         -> char c
+  Cons l r    -> cons (foldExp' char cons option l) (foldExp' char cons option r)
+  Option opts -> option (map (foldExp' char cons option) opts)
+  I i         -> foldExp' char cons option (rhs i)
+
 repr :: (Show a) => Exp a -> String
 repr = foldExp char cons option iFunc
   where
@@ -32,13 +40,17 @@ class Rhs a where
   rhs        :: a -> Exp a
 
 instance (Rhs a) => Arbitrary (Exp a) where
-  arbitrary = foldExp char cons option iFunc (I $ return headSymbol)
+  arbitrary = go (I headSymbol)
     where
+      go :: (Rhs a) => Exp a -> Gen (Exp a)
+      go = foldExp' char cons option
+      -- char :: (Rhs a) => Char -> Gen (Exp a)
       char c      = return $ C c
+      -- cons :: (Rhs a) => Gen (Exp a) -> Gen (Exp a) -> Gen (Exp a)
       cons l r    = do
         l' <- l
         r' <- r
         return $ Cons l' r'
+      -- option :: (Rhs a) => [Gen (Exp a)] -> Gen (Exp a)
       option opts = oneof opts
-      iFunc i     = rhs <$> i
   shrink _ = []
