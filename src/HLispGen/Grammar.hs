@@ -20,6 +20,7 @@ foldExp char cons option iFunc exp = case exp of
   I i         -> iFunc i
 
 
+-- a fold that expands identifiers by recursively applying the non-terminal rule
 foldExp' :: (Rhs a) => (Char -> r) -> (r -> r -> r) -> ([r] -> r) -> Exp a -> r
 foldExp' char cons option exp = case exp of
   C c         -> char c
