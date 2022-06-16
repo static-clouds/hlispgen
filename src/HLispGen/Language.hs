@@ -13,7 +13,7 @@ data Symbol = Token | NumToken | Plus | LParen | RParen deriving (Eq, Show)
 instance Rhs Symbol where
   headSymbol = Token
   rhs Token    = Option [ I NumToken
-                        , Cons (I LParen) (Cons (I Token) (Cons (I Plus) (Cons (I Token) (I RParen))) )
+                        , I LParen <> I Token <> I Plus <> I Token <> I RParen
                         ]
   rhs NumToken = Option [C '1', C '2', C '3']
   rhs Plus     = C '+'
@@ -40,7 +40,7 @@ toParseTree :: ParseOutput -> Exp Symbol
 toParseTree = foldParseOutput num add
   where
     num     = C
-    add l r = Cons (C '(') (Cons l (Cons (C '+') (Cons r (C ')'))) )
+    add l r = C '(' <> l <> C '+' <> r <> C ')'
 
 toAST :: ParseOutput -> AST
 toAST = foldParseOutput ANum AAdd

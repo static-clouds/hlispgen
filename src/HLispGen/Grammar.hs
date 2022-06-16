@@ -12,6 +12,9 @@ data Exp a = C Char
            | I a
            deriving (Eq, Show)
 
+instance Semigroup (Exp a) where
+  (<>) = Cons
+
 foldExp :: (Char -> r) -> (r -> r -> r) -> ([r] -> r) -> (a -> r) -> Exp a -> r
 foldExp char cons option iFunc exp = case exp of
   C c         -> char c
